@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-6">
+    <h1 class="text-3xl font-extrabold text-gray-900 mb-8">Analytical Dashboard</h1>
+    <p class="text-gray-600 mb-6">Key Performance Indicators (KPIs) and Portfolio Risk Overview based on saved predictions.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {% for kpi in kpis %}
+        <div class="bg-white p-6 rounded-xl shadow-lg border-t-4 border-{{ kpi.color }}-500">
+            <p class="text-3xl font-bold text-gray-900">{{ kpi.value }}</p>
+            <p class="text-sm font-medium text-gray-500 mt-1">{{ kpi.title }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="mt-8 p-8 bg-white rounded-xl shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">High-Risk Loan Classification Chart</h2>
+        <canvas id="riskDistributionChart" class="max-h-[400px]"></canvas>
+    </div>
+
+    <div class="mt-8 p-8 bg-white rounded-xl shadow-md">
+        <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">High-Risk Loan Snapshot</h2>
+        
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan ID</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Predicted Score</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Classification</th>
+                    <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for loan in high_risk_loans %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ loan.id }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ loan.amount }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-{{ loan.color }}-600">{{ loan.score }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <span class="inline-flex px-2 text-xs font-semibold leading-5 rounded-full bg-{{ loan.color }}-100 text-{{ loan.color }}-800">
+                            {{ loan.classification }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ loan.region }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if not high_risk_loans %}
+        <div class="text-center py-10 text-gray-500">
+            No high-risk loans found in the current snapshot.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    // 1. Data Aggregation
+    const highRiskLoans = [
+        {% for loan in high_risk_loans %}
+            "{{ loan.classification }}",
+        {% endfor %}
+    ];
+
+    const counts = {};
+    highRiskLoans.forEach(c => {
+        counts[c] = (counts[c] || 0) + 1;
+    });
+
+    const labels = Object.keys(counts);
+    const data = Object.values(counts);
+    
+    // 2. Chart Initialization
+    if (labels.length > 0) {
+        const ctx = document.getElementById('riskDistributionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Number of Loans',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(239, 68, 68, 0.6)',   // Red for Defaulted
+                        'rgba(245, 158, 11, 0.6)',  // Yellow for Non-Defaulted (Medium Risk)
+                    ],
+                    borderColor: [
+                        'rgba(239, 68, 68, 1)',
+                        'rgba(245, 158, 11, 1)',
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: 'Loan Count by Predicted Classification' }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Count' },
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}
