@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 border-b pb-2">Recent Predictions History</h1>
+
+    {% if predictions %}
+    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Timestamp
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Loan Amount
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Risk %
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Risk Level
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for prediction in predictions %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ prediction['timestamp'] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${{ "{:,.2f}".format(prediction['loan_amount']) }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {% if prediction['risk_percentage'] > 60 %} bg-red-100 text-red-800
+                        {% elif prediction['risk_percentage'] > 40 %} bg-yellow-100 text-yellow-800
+                        {% else %} bg-green-100 text-green-800
+                        {% endif %}">
+                            {{ prediction['risk_percentage'] }}%
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ prediction['risk_level'] }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ prediction['default_status'] }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700">
+        <p>No prediction history found yet. Please make a prediction on the Prediction Tool page.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
