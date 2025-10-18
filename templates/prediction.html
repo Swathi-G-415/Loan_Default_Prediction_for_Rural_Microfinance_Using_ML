@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="py-6">
+    <h1 class="text-3xl font-extrabold text-gray-900 mb-6">Loan Risk Prediction Tool</h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 bg-white p-8 rounded-xl shadow-lg">
+            <h2 class="text-xl font-bold text-gray-800 mb-6 border-b pb-2">Applicant & Loan Details</h2>
+            
+            <form method="POST" action="{{ url_for('prediction_tool') }}" id="loanForm" class="space-y-6">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <label for="loanAmount" class="block text-sm font-medium text-gray-700">Loan Amount (₹)</label>
+                        <input type="range" id="loanAmount" name="loanAmount" min="10000" max="1000000" step="1000" value="{{ inputs.loanAmount }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                        <p class="text-sm text-gray-500 mt-1">Value: <span id="loanAmountValue">₹{{ "{:,.0f}".format(inputs.loanAmount) }}</span></p>
+                    </div>
+                    <div>
+                        <label for="monthlyIncome" class="block text-sm font-medium text-gray-700">Monthly Income (₹)</label>
+                        <input type="range" id="monthlyIncome" name="monthlyIncome" min="5000" max="200000" step="1000" value="{{ inputs.monthlyIncome }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                        <p class="text-sm text-gray-500 mt-1">Value: <span id="monthlyIncomeValue">₹{{ "{:,.0f}".format(inputs.monthlyIncome) }}</span></p>
+                    </div>
+                    <div>
+                        <label for="loanTerm" class="block text-sm font-medium text-gray-700">Loan Term (Months)</label>
+                        <input type="range" id="loanTerm" name="loanTerm" min="6" max="60" step="6" value="{{ inputs.loanTerm }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                        <p class="text-sm text-gray-500 mt-1">Value: <span id="loanTermValue">{{ inputs.loanTerm }}</span> </p>
+                    </div>
+                    <div>
+                        <label for="collateral" class="block text-sm font-medium text-gray-700">Collateral</label>
+                        <select id="collateral" name="collateral" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="yes" {% if inputs.collateral == 'yes' %}selected{% endif %}>Yes (Property/Gold)</option>
+                            <option value="no" {% if inputs.collateral == 'no' %}selected{% endif %}>No Collateral</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-gray-800 pt-4 border-t mt-6">Applicant Profile</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div>
+                        <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
+                        <input type="range" id="age" name="age" min="18" max="70" value="{{ inputs.age }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg">
+                        <p class="text-sm text-gray-500 mt-1">Value: <span id="ageValue">{{ inputs.age }}</span> </p>
+                    </div>
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                        <select id="gender" name="gender" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="male" {% if inputs.gender == 'male' %}selected{% endif %}>Male</option>
+                            <option value="female" {% if inputs.gender == 'female' %}selected{% endif %}>Female</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="dependents" class="block text-sm font-medium text-gray-700">Dependents</label>
+                        <input type="number" id="dependents" name="dependents" min="0" max="10" value="{{ inputs.dependents }}" required class="mt-1 focus:ring-blue-500 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-bold text-gray-800 pt-4 border-t mt-6">Contextual Factors</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div>
+                        <label for="previousLoanHistory" class="block text-sm font-medium text-gray-700">Previous Loan History</label>
+                        <select id="previousLoanHistory" name="previousLoanHistory" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="good" {% if inputs.previousLoanHistory == 'good' %}selected{% endif %}>Good Repayment</option>
+                            <option value="none" {% if inputs.previousLoanHistory == 'none' %}selected{% endif %}>No History</option>
+                            <option value="poor" {% if inputs.previousLoanHistory == 'poor' %}selected{% endif %}>Poor Track Record</option>
+                            <option value="defaulted" {% if inputs.previousLoanHistory == 'defaulted' %}selected{% endif %}>Prior Default</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="repaymentBehavior" class="block text-sm font-medium text-gray-700">Current Repayment Behavior</label>
+                        <select id="repaymentBehavior" name="repaymentBehavior" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="good" {% if inputs.repaymentBehavior == 'good' %}selected{% endif %}>Timely/Good</option>
+                            <option value="poor" {% if inputs.repaymentBehavior == 'poor' %}selected{% endif %}>Irregular/Poor</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="occupation" class="block text-sm font-medium text-gray-700">Occupation</label>
+                        <select id="occupation" name="occupation" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                            <option value="farming" {% if inputs.occupation == 'farming' %}selected{% endif %}>Farming/Agriculture</option>
+                            <option value="labor" {% if inputs.occupation == 'labor' %}selected{% endif %}>Unskilled Labor</option>
+                            <option value="trader" {% if inputs.occupation == 'trader' %}selected{% endif %}>Small Trader/Shop</option>
+                            <option value="other" {% if inputs.occupation == 'other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t flex justify-end space-x-4">
+                    <button type="submit" name="action" value="calculate"
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Calculate Risk
+                    </button>
+                    <button type="submit" name="action" value="save"
+                            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Calculate & Save Prediction
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="lg:col-span-1">
+            <div class="sticky top-6 bg-white p-8 rounded-xl shadow-2xl space-y-6 text-center 
+                {% if risk_level == 'LOW RISK' %}border-green-500 border-4{% elif risk_level == 'MEDIUM RISK' %}border-yellow-500 border-4{% else %}border-red-500 border-4{% endif %}">
+                
+                <h2 class="text-2xl font-bold text-gray-800">Final Risk Score</h2>
+
+                <div class="p-6 rounded-lg 
+                    {% if risk_level == 'LOW RISK' %}bg-green-100 text-green-700{% elif risk_level == 'MEDIUM RISK' %}bg-yellow-100 text-yellow-700{% else %}bg-red-100 text-red-700{% endif %}">
+                    <p class="text-6xl font-extrabold mb-1">{{ risk_pct }}%</p>
+                    <p class="text-xl font-semibold">{{ risk_level }}</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-500">Predicted Default Status:</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ default_status }}</p>
+                </div>
+
+                <a href="{{ url_for('risk_breakdown') }}"
+                   class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    View Detailed Breakdown
+                </a>
+                
+                <p class="text-xs text-gray-400 mt-4">Note: Score based on the last calculated inputs.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Update range input displays in real-time
+    document.addEventListener('DOMContentLoaded', function() {
+        const ranges = [
+            { id: 'loanAmount', displayId: 'loanAmountValue', prefix: '₹', format: true },
+            { id: 'monthlyIncome', displayId: 'monthlyIncomeValue', prefix: '₹', format: true },
+            { id: 'loanTerm', displayId: 'loanTermValue', prefix: '', suffix: ' months', format: false },
+            { id: 'age', displayId: 'ageValue', prefix: '', suffix: ' years', format: false }
+        ];
+
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        ranges.forEach(range => {
+            const input = document.getElementById(range.id);
+            const output = document.getElementById(range.displayId);
+            
+            if (input && output) {
+                input.addEventListener('input', (e) => {
+                    let value = e.target.value;
+                    if (range.format) {
+                        value = formatNumber(value);
+                    }
+                    output.textContent = range.prefix + value + (range.suffix || '');
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}
+
