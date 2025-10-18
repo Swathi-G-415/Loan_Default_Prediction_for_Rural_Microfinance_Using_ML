@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-12 sm:px-6 lg:px-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 border-b pb-2">Analytical Dashboard</h1>
+
+    <div class="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-500 truncate">Total Predictions</dt>
+                <dd class="mt-1 text-3xl font-semibold text-gray-900">{{ dashboard_data.total }}</dd>
+            </div>
+        </div>
+        
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-500 truncate">Non-Defaulted Loans</dt>
+                <dd class="mt-1 text-3xl font-semibold text-green-600">{{ dashboard_data.non_defaulted_count }}</dd>
+            </div>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <dt class="text-sm font-medium text-gray-500 truncate">High-Risk/Defaulted</dt>
+                <dd class="mt-1 text-3xl font-semibold text-red-600">{{ dashboard_data.defaulted_count }}</dd>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 bg-white shadow overflow-hidden sm:rounded-lg p-6">
+        <h3 class="text-xl font-medium leading-6 text-gray-900 border-b pb-2 mb-4">Risk Level Distribution</h3>
+        
+        <div class="relative h-96">
+            <canvas id="riskChart"></canvas>
+        </div>
+        
+    </div>
+    
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // *** FIX: Passing Python dictionary directly as a JS object literal for reliability ***
+        // This line is the most robust way to transfer data from Jinja to JavaScript.
+        const rawData = {{ dashboard_data.risk_distribution | tojson }}; 
+        
+        if (Object.keys(rawData).length === 0) {
+            const chartDiv = document.getElementById('riskChart').parentNode;
+            chartDiv.innerHTML = '<p class="text-gray-500 text-center py-10">No prediction data available to generate a chart. Please make some predictions first.</p>';
+            return;
+        }
+
+        const riskLabels = ['LOW RISK', 'MEDIUM RISK', 'HIGH RISK'];
+        
+        // --- Prepare Datasets to ensure separate legend entries ---
+        
+        // Dataset 1: Low Risk (Teal/Blue)
+        const lowRiskCount = rawData['LOW RISK'] || 0;
+        // Data structure: [Low Risk Count, 0, 0] so it draws only on the LOW RISK bar
+        const lowRiskData = [lowRiskCount, 0, 0]; 
+
+        // Dataset 2: Medium Risk (Yellow/Orange)
+        const mediumRiskCount = rawData['MEDIUM RISK'] || 0;
+        const mediumRiskData = [0, mediumRiskCount, 0]; 
+
+        // Dataset 3: High Risk (Pink/Red)
+        const highRiskCount = rawData['HIGH RISK'] || 0;
+        const highRiskData = [0, 0, highRiskCount]; 
+        
+        // --- Chart Configuration ---
+        const ctx = document.getElementById('riskChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: riskLabels,
+                datasets: [
+                    {
+                        label: 'Low Risk',
+                        data: lowRiskData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)', // Teal/Blue
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                    },
+                    {
+                        label: 'Medium Risk',
+                        data: mediumRiskData,
+                        backgroundColor: 'rgba(255, 206, 86, 0.7)', // Yellow/Orange
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1,
+                    },
+                    {
+                        label: 'High Risk',
+                        data: highRiskData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)', // Pink/Red
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                // Stacked bars ensure the Low, Medium, and High datasets display over the same column labels
+                scales: {
+                    x: {
+                        stacked: true, 
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: { display: true, text: 'Number of Predictions' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true, 
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}
